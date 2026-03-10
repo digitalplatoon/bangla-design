@@ -132,24 +132,40 @@ export const templates = pgTable('templates', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Sessions table
+export const sessions = pgTable('sessions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  sessionToken: text('session_token').notNull().unique(),
+  expires: timestamp('expires').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 // AI Generations table
 export const aiGenerations = pgTable('ai_generations', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   siteId: uuid('site_id').references(() => sites.id, { onDelete: 'set null' }),
-  type: varchar('type', { length: 50 }).notNull(),
+  generationType: varchar('generation_type', { length: 50 }).notNull(),
   prompt: text('prompt').notNull(),
-  result: jsonb('result').$type<Record<string, unknown>>().default({}),
+  result: text('result'),
+  status: varchar('status', { length: 20 }).default('pending').notNull(),
   tokensUsed: integer('tokens_used').default(0).notNull(),
+  errorMessage: text('error_message'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 // Relations
-export const usersRelations = relations(users, ({ many, one }) => ({
+export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(subscriptions),
   payments: many(payments),
   sites: many(sites),
   aiGenerations: many(aiGenerations),
+  sessions: many(sessions),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, { fields: [sessions.userId], references: [users.id] }),
 }));
 
 export const plansRelations = relations(plans, ({ many }) => ({
