@@ -1,5 +1,6 @@
 import { db } from "@/db"
 import { aiGenerations } from "@/db/schema"
+import { eq } from "drizzle-orm"
 
 interface GenerateContentParams {
   prompt: string
@@ -43,7 +44,7 @@ export async function generateContent(params: GenerateContentParams): Promise<Ge
         status: "completed",
         tokensUsed: Math.floor(Math.random() * 1000) + 100,
       })
-      .where((table, { eq }) => eq(table.id, generation.id))
+      .where(eq(aiGenerations.id, generation.id))
 
     return {
       content: mockContent,
@@ -61,7 +62,7 @@ export async function generateContent(params: GenerateContentParams): Promise<Ge
         status: "failed",
         errorMessage: error instanceof Error ? error.message : "Unknown error",
       })
-      .where((table, { eq }) => eq(table.id, generation.id))
+      .where(eq(aiGenerations.id, generation.id))
 
     throw error
   }

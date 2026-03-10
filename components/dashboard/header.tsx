@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Bell, Menu, Search, User, LogOut, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,8 +14,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { toast } from "sonner"
 
 export function DashboardHeader() {
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", { method: "POST" })
+      if (response.ok) {
+        toast.success("Logged out successfully")
+        router.push("/login")
+      } else {
+        toast.error("Failed to logout")
+      }
+    } catch {
+      toast.error("Failed to logout")
+    }
+  }
   return (
     <header className="flex h-16 items-center justify-between border-b bg-background px-6">
       <div className="flex items-center gap-4">
@@ -70,7 +87,7 @@ export function DashboardHeader() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem className="text-destructive cursor-pointer" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </DropdownMenuItem>
