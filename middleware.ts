@@ -1,49 +1,85 @@
-import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { jwtVerify } from 'jose';
 
-// Routes that require authentication
-const protectedRoutes = ["/dashboard"]
+const JWT_SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+);
 
-// Routes that should redirect to dashboard if already logged in
-const authRoutes = ["/login", "/register"]
+async function verifySession(token: string): Promise<{ userId: string } | null> {
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    return { userId: payload.userId as string };
+  } catch {
+    return null;
+  }
+}
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  const sessionCookie = request.cookies.get("session")
+export async function middleware(request: NextRequest) {
+  const { nextUrl } = request;
+  const sessionCookie = request.cookies.get('session');
+  const session = sessionCookie ? await verifySession(sessionCookie.value) : null;
+  const isLoggedIn = !!session;
 
-  // Check if the route is protected
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  )
+  const isApiAuthRoute = nextUrl.pathname.startsWith('/api/auth');
+  const isPublicRoute = [
+    '/',
+    '/about',
+    '/pricing',
+    '/templates',
+    '/blog',
+    '/contact',
+    '/terms',
+    '/privacy',
+  ].includes(nextUrl.pathname);
+  const isAuthRoute = ['/login', '/register', '/forgot-password'].includes(nextUrl.pathname);
+  const isDashboardRoute = nextUrl.pathname.startsWith('/dashboard');
+  const isAdminRoute = nextUrl.pathname.startsWith('/admin');
+  const isApiRoute = nextUrl.pathname.startsWith('/api');
 
-  // Check if the route is an auth route
-  const isAuthRoute = authRoutes.some((route) => pathname === route)
-
-  // Redirect to login if accessing protected route without session
-  if (isProtectedRoute && !sessionCookie) {
-    const loginUrl = new URL("/login", request.url)
-    loginUrl.searchParams.set("redirect", pathname)
-    return NextResponse.redirect(loginUrl)
+  // Allow API auth routes
+  if (isApiAuthRoute) {
+    return NextResponse.next();
   }
 
-  // Redirect to dashboard if accessing auth route with valid session
-  if (isAuthRoute && sessionCookie) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+  // Allow public API routes with rate limiting headers
+  if (isApiRoute && !isApiAuthRoute) {
+    const response = NextResponse.next();
+    response.headers.set('X-RateLimit-Limit', '100');
+    return response;
   }
 
-  return NextResponse.next()
+  // Redirect logged-in users away from auth pages
+  if (isAuthRoute && isLoggedIn) {
+    return NextResponse.redirect(new URL('/dashboard', nextUrl));
+  }
+
+  // Allow auth routes
+  if (isAuthRoute) {
+    return NextResponse.next();
+  }
+
+  // Protect dashboard routes
+  if (isDashboardRoute && !isLoggedIn) {
+    const loginUrl = new URL('/login', nextUrl);
+    loginUrl.searchParams.set('redirect', nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Protect admin routes
+  if (isAdminRoute && !isLoggedIn) {
+    return NextResponse.redirect(new URL('/login', nextUrl));
+  }
+
+  // Add security headers to all responses
+  const response = NextResponse.next();
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  return response;
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|templates).*)",
-  ],
-}
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|public/).*)'],
+};
