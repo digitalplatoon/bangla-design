@@ -37,9 +37,10 @@ export default function BuilderPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt,
-          siteName,
-          templateId: selectedTemplate,
+          prompt: `${siteName}: ${prompt}`,
+          type: selectedTemplate ? "section" : "website",
+          siteId: selectedTemplate || undefined,
+          language: "bn",
         }),
       })
 
