@@ -18,11 +18,20 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { prompt, type, siteId, language = 'en' } = body;
+    const { prompt, type = 'website', siteId, language = 'en' } = body;
 
-    if (!prompt || !type) {
+    if (!prompt) {
       return NextResponse.json(
-        { error: 'Missing required fields: prompt, type' },
+        { error: 'Missing required field: prompt' },
+        { status: 400 }
+      );
+    }
+
+    // Validate type
+    const validTypes = ['website', 'section', 'component', 'content', 'image'];
+    if (!validTypes.includes(type)) {
+      return NextResponse.json(
+        { error: 'Invalid type. Must be one of: website, section, component, content, image' },
         { status: 400 }
       );
     }

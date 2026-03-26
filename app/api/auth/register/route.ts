@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { db } from '@/db';
 import { users, plans, subscriptions } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { createSession } from '@/lib/auth';
 
 // POST /api/auth/register - Register a new user
 export async function POST(req: NextRequest) {
@@ -81,6 +82,9 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Auto-login after registration
+    await createSession(user.id);
+
     return NextResponse.json(
       {
         success: true,
@@ -90,6 +94,7 @@ export async function POST(req: NextRequest) {
           name: user.name,
           email: user.email,
         },
+        redirect: '/dashboard',
       },
       { status: 201 }
     );

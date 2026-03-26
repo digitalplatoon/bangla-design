@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm"
 
 interface GenerateContentParams {
   prompt: string
-  type: "website" | "section" | "component" | "content"
+  type: "website" | "section" | "component" | "content" | "image"
   siteId?: string
   language: "en" | "bn"
   userId: string

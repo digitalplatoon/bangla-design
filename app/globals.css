@@ -67,12 +67,28 @@
     text-wrap: pretty;
   }
   
+  .bg-bangla-green {
+    background-color: #006A4E;
+  }
+  
+  .text-bangla-green {
+    color: #006A4E;
+  }
+  
+  .bg-bangla-red {
+    background-color: #F42A41;
+  }
+  
+  .text-bangla-red {
+    color: #F42A41;
+  }
+  
   .gradient-text {
-    @apply bg-gradient-to-r from-bangla-green to-emerald-500 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-[#006A4E] to-emerald-500 bg-clip-text text-transparent;
   }
   
   .gradient-bg {
-    @apply bg-gradient-to-r from-bangla-green to-emerald-600;
+    @apply bg-gradient-to-r from-[#006A4E] to-emerald-600;
   }
   
   .glass {
