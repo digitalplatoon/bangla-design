@@ -2,8 +2,14 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
+if (!process.env.JWT_SECRET) {
+  console.warn(
+    'Warning: JWT_SECRET environment variable is not set. Using default secret for development only.'
+  );
+}
+
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+  process.env.JWT_SECRET || 'dev-secret-key-must-be-set-in-production'
 );
 
 async function verifySession(token: string): Promise<{ userId: string } | null> {
